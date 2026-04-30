@@ -1,6 +1,7 @@
 webapp/node_modules/
 webapp/dist/
 .claude/
+tools/launch.log
 webapp/.vite/
 .DS_Store
 Thumbs.db

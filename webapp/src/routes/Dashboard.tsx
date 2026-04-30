@@ -7,8 +7,15 @@ import {
   computeAnswerDue,
   summarizeCaseFile,
 } from "../lib/caseFile";
-import { Deadline, daysUntil, urgencyClass } from "../lib/deadlines";
+import { Deadline, daysUntil } from "../lib/deadlines";
 import { SEATS } from "../data/seats";
+
+/*
+ * iOS-style dashboard polish: rounded surfaces, soft shadows, ambient
+ * background tint, hover lift on quick action tiles, refined typography.
+ * The brief said "no gradients on primary surfaces"; this keeps panel
+ * cards flat and pushes the gradient to the page background only.
+ */
 
 export function Dashboard() {
   const [caseFile, setCaseFile] = useState<CaseFile>(() =>
@@ -17,6 +24,11 @@ export function Dashboard() {
   const [deadlines, setDeadlines] = useState<Deadline[]>(() =>
     getItem<Deadline[]>("deadlines", []),
   );
+
+  useEffect(() => {
+    document.body.classList.add("dashboard-bg");
+    return () => document.body.classList.remove("dashboard-bg");
+  }, []);
 
   useEffect(() => {
     const u1 = subscribe<CaseFile>("caseFile", (v) =>
@@ -43,20 +55,33 @@ export function Dashboard() {
 
   const standby = SEATS.filter((s) => s.contingent);
   const active = SEATS.filter((s) => !s.contingent);
+  const hardVetoActive = SEATS.filter(
+    (s) => s.authority === "hard-veto" && !s.contingent,
+  ).length;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100">Dashboard</h1>
+      <header className="space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="ios-pill">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            Active matter
+          </span>
+          <span className="ios-pill">J.P. Court (TRCP 500 to 510)</span>
+        </div>
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-50">
+          Legal Dream Team
+        </h1>
         <p className="text-sm text-slate-400">
-          ATTORNEY WORK PRODUCT (SELF PREPARED). Texas civil defense, J.P. Court
-          matter.
+          ATTORNEY WORK PRODUCT (SELF PREPARED). Defendant orientation.
         </p>
-      </div>
+      </header>
 
-      <section className="panel-card">
+      <section className="ios-card">
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-lg font-semibold">Matter snapshot</h2>
+          <h2 className="text-base font-semibold text-slate-100">
+            Matter snapshot
+          </h2>
           <Link className="text-xs text-indigo-400 hover:underline" to="/case-file">
             Edit case file
           </Link>
@@ -64,49 +89,64 @@ export function Dashboard() {
         {summary ? (
           <div className="text-sm text-slate-300 leading-relaxed">{summary}</div>
         ) : (
-          <div className="text-sm text-slate-500">
+          <div className="text-sm text-slate-400">
             Case file not yet filled in. Open Case File to begin.
           </div>
         )}
         {answerDue && (
-          <div className="mt-3 text-sm">
-            <span className="text-slate-400">Answer due (TRCP 502.5): </span>
-            <span className="font-mono text-amber-300">
-              {answerDue} by 10:00 a.m.
-            </span>
-          </div>
+          <>
+            <div className="ios-divider my-4" />
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-wider text-slate-500">
+                Answer due (TRCP 502.5)
+              </span>
+              <span className="font-mono text-sm text-amber-300 ios-stat">
+                {answerDue} . 10:00 a.m.
+              </span>
+            </div>
+          </>
         )}
       </section>
 
-      <section className="panel-card">
+      <section className="ios-card">
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-lg font-semibold">Next 3 deadlines</h2>
+          <h2 className="text-base font-semibold text-slate-100">
+            Next 3 deadlines
+          </h2>
           <Link className="text-xs text-indigo-400 hover:underline" to="/deadlines">
             All deadlines
           </Link>
         </div>
         {upcoming.length === 0 ? (
-          <div className="text-sm text-slate-500">
-            No pending deadlines on the calendar. Add some on the Deadlines page.
+          <div className="text-sm text-slate-400">
+            No pending deadlines on the calendar. Add some on the Deadlines
+            page.
           </div>
         ) : (
           <ul className="space-y-2">
             {upcoming.map((d) => {
               const days = daysUntil(d.date);
+              const tone = pillTone(days);
               return (
                 <li
                   key={d.id}
-                  className={`px-3 py-2 rounded-sm ${urgencyClass(d)}`}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-slate-800/40 ring-1 ring-inset ring-white/5 px-4 py-3"
                 >
-                  <div className="flex justify-between items-baseline">
-                    <span className="font-semibold text-slate-100">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-100 truncate">
                       {d.name}
-                    </span>
-                    <span className="text-xs text-slate-400">{d.rule}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {d.rule} . {d.date}
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-300 mt-1">
-                    {d.date} . {days !== null ? `${days} day(s) out` : ""}
-                  </div>
+                  <span className={`ios-pill ${tone}`}>
+                    {days === null
+                      ? "no date"
+                      : days < 0
+                      ? `${Math.abs(days)}d overdue`
+                      : `${days}d out`}
+                  </span>
                 </li>
               );
             })}
@@ -114,50 +154,147 @@ export function Dashboard() {
         )}
       </section>
 
-      <section className="panel-card">
-        <h2 className="text-lg font-semibold mb-3">Panel status</h2>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500">
-              Active
-            </div>
-            <div className="text-2xl font-bold text-emerald-400">
-              {active.length}
-            </div>
-            <div className="text-xs text-slate-400">seats always on</div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500">
-              Standby
-            </div>
-            <div className="text-2xl font-bold text-amber-400">
-              {standby.length}
-            </div>
-            <div className="text-xs text-slate-400">contingent seats</div>
-          </div>
+      <section className="ios-card">
+        <h2 className="text-base font-semibold text-slate-100 mb-3">
+          Panel status
+        </h2>
+        <div className="grid grid-cols-3 gap-3">
+          <StatTile
+            label="Active"
+            value={active.length}
+            sub="seats always on"
+            tone="emerald"
+          />
+          <StatTile
+            label="Hard veto"
+            value={hardVetoActive}
+            sub="always on"
+            tone="red"
+          />
+          <StatTile
+            label="Standby"
+            value={standby.length}
+            sub="contingent"
+            tone="amber"
+          />
         </div>
-        <div className="mt-3 text-xs text-slate-400">
-          Standby seats: {standby.map((s) => s.shortName).join(", ")}
+        <div className="mt-3 text-xs text-slate-500">
+          Standby: {standby.map((s) => s.shortName).join(" . ")}
         </div>
       </section>
 
-      <section className="panel-card">
-        <h2 className="text-lg font-semibold mb-3">Quick actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Link to="/pleadings" className="btn">
-            Draft Answer
-          </Link>
-          <Link to="/convene" className="btn btn-primary">
-            Convene Panel
-          </Link>
-          <Link to="/evidence" className="btn">
-            Add Evidence
-          </Link>
-          <Link to="/settlement" className="btn">
-            Run Settlement Math
-          </Link>
+      <section>
+        <h2 className="text-base font-semibold text-slate-100 mb-3 px-1">
+          Quick actions
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <ActionTile
+            to="/pleadings"
+            title="Draft Answer"
+            sub="TRCP 92 general denial"
+            accent="indigo"
+          />
+          <ActionTile
+            to="/convene"
+            title="Convene Panel"
+            sub="22 seats, full protocol"
+            accent="violet"
+          />
+          <ActionTile
+            to="/evidence"
+            title="Add Evidence"
+            sub="Photos, EDR, dashcam"
+            accent="emerald"
+          />
+          <ActionTile
+            to="/settlement"
+            title="Settlement Math"
+            sub="Cost / risk model"
+            accent="amber"
+          />
         </div>
       </section>
     </div>
+  );
+}
+
+function pillTone(days: number | null): string {
+  if (days === null) return "";
+  if (days < 7) return "bg-red-500/15 text-red-300 ring-red-500/30";
+  if (days <= 21) return "bg-amber-500/15 text-amber-300 ring-amber-500/30";
+  return "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30";
+}
+
+function StatTile({
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  label: string;
+  value: number;
+  sub: string;
+  tone: "emerald" | "red" | "amber";
+}) {
+  const ring = {
+    emerald: "ring-emerald-500/20",
+    red: "ring-red-500/25",
+    amber: "ring-amber-500/25",
+  }[tone];
+  const dot = {
+    emerald: "bg-emerald-400",
+    red: "bg-red-400",
+    amber: "bg-amber-400",
+  }[tone];
+  const num = {
+    emerald: "text-emerald-300",
+    red: "text-red-300",
+    amber: "text-amber-300",
+  }[tone];
+  return (
+    <div
+      className={`rounded-xl bg-slate-800/40 px-3 py-3 ring-1 ring-inset ${ring}`}
+    >
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-400">
+        <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+        {label}
+      </div>
+      <div className={`text-3xl ios-stat ${num}`}>{value}</div>
+      <div className="text-[11px] text-slate-500">{sub}</div>
+    </div>
+  );
+}
+
+function ActionTile({
+  to,
+  title,
+  sub,
+  accent,
+}: {
+  to: string;
+  title: string;
+  sub: string;
+  accent: "indigo" | "violet" | "emerald" | "amber";
+}) {
+  const accentBg = {
+    indigo: "bg-indigo-500/15 text-indigo-300 ring-indigo-500/30",
+    violet: "bg-violet-500/15 text-violet-300 ring-violet-500/30",
+    emerald: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+    amber: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+  }[accent];
+  return (
+    <Link to={to} className="ios-tile group block">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="text-sm font-semibold text-slate-100">{title}</div>
+          <div className="text-xs text-slate-400 mt-0.5">{sub}</div>
+        </div>
+        <span
+          className={`ios-pill ring-1 ring-inset ${accentBg} group-hover:scale-105 transition-transform`}
+        >
+          Open
+        </span>
+      </div>
+    </Link>
   );
 }

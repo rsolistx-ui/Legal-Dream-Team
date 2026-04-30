@@ -8,3 +8,6 @@ Thumbs.db
 *.log
 .eslintcache
 tsconfig.tsbuildinfo
+release/
+out/
+

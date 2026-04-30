@@ -3,12 +3,22 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "main": "electron/main.cjs",
+  "description": "Legal Dream Team. 22 seat Texas civil defense panel.",
+  "author": {
+    "name": "Richie Solis"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:electron": "cross-env VITE_BASE=./ tsc -b && cross-env VITE_BASE=./ vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "electron:dev": "cross-env ELECTRON_DEV=1 electron electron/main.cjs",
+    "electron:build": "npm run build:electron && electron-builder --win portable nsis",
+    "electron:build:portable": "npm run build:electron && electron-builder --win portable",
+    "electron:build:installer": "npm run build:electron && electron-builder --win nsis"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -24,11 +34,52 @@
     "@typescript-eslint/parser": "^7.18.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
     "vite": "^5.4.2"
+  },
+  "optionalDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.rsolis.legaldreamteam",
+    "productName": "Legal Dream Team",
+    "copyright": "Copyright (c) 2026 Richie Solis",
+    "directories": {
+      "output": "release",
+      "buildResources": "electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/main.cjs",
+      "electron/icon.png",
+      "electron/icon.ico",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        { "target": "portable", "arch": ["x64"] },
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "electron/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Legal-Dream-Team-${version}-portable.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Legal Dream Team",
+      "artifactName": "Legal-Dream-Team-${version}-setup.exe"
+    }
   }
 }

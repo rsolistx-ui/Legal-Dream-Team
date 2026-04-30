@@ -1,0 +1,10 @@
+webapp/node_modules/
+webapp/dist/
+.claude/
+webapp/.vite/
+.DS_Store
+Thumbs.db
+.env
+.env.*
+*.log
+.eslintcache
